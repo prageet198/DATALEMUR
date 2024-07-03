@@ -1,0 +1,35 @@
+LEVEL:-EASY
+COMPANY:-Visa
+URL:-https://datalemur.com/questions/apple-pay-volume
+
+Question:-
+Visa is analysing its partnership with ApplyPay. Calculate the total transaction volume for each merchant where the transaction was performed via ApplePay.
+
+Output the merchant ID and the total transactions. For merchants with no ApplePay transactions, output their total transaction volume as 0. 
+Display the result in descending order of the transaction volume.
+
+Tip: You might want to check the spelling of the payment methods... just sayin'
+
+Solution-1:-
+WITH initalTransaction AS (
+SELECT merchant_id,
+CASE WHEN LOWER(payment_method)='apple pay' THEN transaction_amount
+ELSE 0 END AS flagAmt
+FROM transactions
+ORDER BY merchant_id
+)
+
+SELECT merchant_id,
+SUM(flagAmt) AS totalTransaction
+FROM initalTransaction
+GROUP BY merchant_id
+ORDER BY totalTransaction DESC
+
+Solution-2:-
+SELECT 
+  merchant_id, 
+  SUM(CASE WHEN LOWER(payment_method) = 'apple pay' THEN transaction_amount
+  ELSE 0 END) AS total_transaction
+FROM transactions
+GROUP BY merchant_id
+ORDER BY total_transaction DESC;
