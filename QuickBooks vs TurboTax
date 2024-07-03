@@ -1,0 +1,20 @@
+LEVEL:-EASY
+COMPANY:-Intuit
+URL:-https://datalemur.com/questions/quickbooks-vs-turbotax
+
+Question:-
+Intuit provides a range of tax filing products, including TurboTax and QuickBooks, available in various versions.
+
+Write a query to determine the total number of tax filings made using TurboTax and QuickBooks. Each user can file taxes once a year using only one product.
+
+Solution-1:-
+SELECT
+  SUM (CASE WHEN LOWER(product) LIKE 'turbotax%' THEN 1 ELSE 0 END) AS turbotax_total,
+  SUM (CASE WHEN LOWER(product) LIKE 'quickbooks%' THEN 1 ELSE 0 END) AS quickbooks_total
+FROM filed_taxes;
+
+Solution-2:-
+SELECT
+  SUM(1) FILTER (WHERE LOWER (product) LIKE 'turbotax%') AS turbotax_total,
+  SUM(1) FILTER (WHERE LOWER (product) LIKE 'quickbooks%') AS quickbooks_total
+FROM filed_taxes;
