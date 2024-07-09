@@ -1,0 +1,56 @@
+LEVEL:-MEDIUM
+COMPANY:-Accenture
+URL:-https://datalemur.com/questions/compensation-outliers
+
+Question:-
+Your team at Accenture is helping a Fortune 500 client revamp their compensation and benefits program. The first step in this analysis is to 
+manually review employees who are potentially overpaid or underpaid.
+
+An employee is considered to be potentially overpaid if they earn more than 2 times the average salary for people with the same title. Similarly, 
+an employee might be underpaid if they earn less than half of the average for their title. We'll refer to employees who are both underpaid 
+and overpaid as compensation outliers for the purposes of this problem.
+
+Write a query that shows the following data for each compensation outlier: employee ID, salary, and whether they are potentially overpaid or potentially underpaid
+
+Solution-1:-
+WITH titleAvgSal AS (
+SELECT title,
+ROUND(AVG(salary)) AS avgSalary
+FROM employee_pay 
+GROUP BY title
+),
+calculation AS (
+SELECT employee_id,
+salary,
+avgSalary,
+CASE WHEN salary>=2*avgsalary THEN 'Overpaid'
+WHEN salary<=(avgsalary/2) THEN 'Underpaid'
+ELSE 'N/A' END AS status
+FROM employee_pay INNER JOIN titleAvgSal
+ON employee_pay.title=titleAvgSal.title
+)
+SELECT employee_id,
+salary,
+status
+FROM calculation
+WHERE status!='N/A'
+
+Solution-2:-
+WITH payout AS (
+SELECT
+  employee_id,
+  salary,
+  title,
+  (AVG(salary) OVER (PARTITION BY title)) * 2 AS double_average,
+  (AVG(salary) OVER (PARTITION BY title)) / 2 AS half_average
+FROM employee_pay)
+
+SELECT
+  employee_id,
+  salary,
+  CASE WHEN salary > double_average THEN 'Overpaid'
+    WHEN salary < half_average THEN 'Underpaid'
+  END AS outlier_status
+FROM payout
+WHERE salary > double_average
+  OR salary < half_average;
