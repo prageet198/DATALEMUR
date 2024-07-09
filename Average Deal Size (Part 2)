@@ -1,0 +1,78 @@
+LEVEL:-MEDIUM
+COMPANY:-Sales Force
+URL:-https://datalemur.com/questions/sql-average-deal-size-2
+
+Question:-
+Assuming Salesforce operates on a per user (per seat) pricing model, we have a table containing contracts data.
+
+Write a query to calculate the average annual revenue per Salesforce customer in three market segments: SMB, Mid-Market, and Enterprise. 
+Each customer is represented by a single contract. Format the output to match the structure shown in the Example Output section below.
+
+Assumptions:
+
+    Yearly seat cost refers to the cost per seat.
+    Each customer is represented by one contract.
+    The market segments are categorized as:-
+        SMB (less than 100 employees)
+        Mid-Market (100 to 999 employees)
+        Enterprise (1000 employees or more)
+    The terms "average deal size" and "average revenue" refer to the same concept which is the average annual revenue generated per customer in each market segment.
+	
+Solution-1:-
+WITH smb AS (
+SELECT 
+(SUM(num_seats) * contracts.yearly_seat_cost/
+COUNT(DISTINCT contracts.customer_id)) AS smb_avg_revenue
+FROM contracts INNER JOIN customers
+ON contracts.customer_id=customers.customer_id
+WHERE customers.employee_count<100
+GROUP BY contracts.yearly_seat_cost
+),
+mid AS (
+SELECT 
+(SUM(num_seats) * contracts.yearly_seat_cost/
+COUNT(DISTINCT contracts.customer_id)) AS mid_avg_revenue
+FROM contracts INNER JOIN customers
+ON contracts.customer_id=customers.customer_id
+WHERE customers.employee_count>=100 AND customers.employee_count<=999
+GROUP BY contracts.yearly_seat_cost
+),
+enterprise AS (
+SELECT 
+(SUM(num_seats) * contracts.yearly_seat_cost/
+COUNT(DISTINCT contracts.customer_id)) AS enterprise_avg_revenue
+FROM contracts INNER JOIN customers
+ON contracts.customer_id=customers.customer_id
+WHERE customers.employee_count>=1000
+GROUP BY contracts.yearly_seat_cost
+)
+SELECT *
+FROM smb,mid,enterprise
+
+Solution-2:-
+WITH segment_cte AS (
+  SELECT
+    customer_id,
+    CASE
+      WHEN employee_count < 100 THEN 'smb'
+      WHEN employee_count BETWEEN 100 AND 999 THEN 'mid'
+      ELSE 'enterprise'
+    END AS segment
+  FROM customers
+)
+, revenue_cte AS (
+  SELECT
+    seg.segment,
+    SUM(contracts.num_seats * contracts.yearly_seat_cost) 
+      / COUNT(DISTINCT seg.customer_id) AS avg_revenue
+  FROM segment_cte AS seg
+  INNER JOIN contracts 
+    ON seg.customer_id = contracts.customer_id
+  GROUP BY seg.segment
+)
+
+SELECT
+  SUM(CASE WHEN segment = 'smb' THEN avg_revenue END) AS smb_avg_revenue,
+  SUM(CASE WHEN segment = 'mid' THEN avg_revenue END) AS mid_avg_revenue,
+  SUM(CASE WHEN segment = 'enterprise' THEN avg_revenue END) AS enterprise_avg_revenue
+FROM revenue_cte;
