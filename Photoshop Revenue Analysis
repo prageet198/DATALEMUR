@@ -1,0 +1,18 @@
+LEVEL:-MEDIUM
+COMPANY:-Adobe
+URL:-https://datalemur.com/questions/photoshop-revenue-analysis
+
+Question:-
+For every customer that bought Photoshop, return a list of the customers, and the total spent on all the products except for Photoshop products.
+
+Sort your answer by customer ids in ascending order.
+
+Solution:-
+SELECT customer_id,
+SUM(revenue) AS totalRevenue
+FROM adobe_transactions
+WHERE customer_id IN (SELECT DISTINCT(customer_id) AS custId
+FROM adobe_transactions
+WHERE product='Photoshop')
+AND product!='Photoshop'
+GROUP BY customer_id
