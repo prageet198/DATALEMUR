@@ -1,0 +1,34 @@
+LEVEL:-MEDIUM
+COMPANY:-Linked In
+URL:-https://datalemur.com/questions/linkedin-power-creators-part2
+
+Question:-
+The LinkedIn Creator team is looking for power creators who use their personal profile as a company or influencer page. 
+This means that if someone's Linkedin page has more followers than all the company they work for, we can safely assume that person is a Power Creator. 
+Keep in mind that if a person works at multiple companies, we should take into account the company with the most followers.
+
+Write a query to return the IDs of these LinkedIn power creators in ascending order.
+
+Assumptions:
+
+    A person can work at multiple companies.
+    In the case of multiple companies, use the one with largest follower base.
+Solution:-
+WITH companyData AS (
+SELECT 
+employee_company.personal_profile_id,
+MAX(company_pages.followers) AS companyFollowers
+FROM employee_company INNER JOIN company_pages 
+ON employee_company.company_id=company_pages.company_id
+GROUP BY employee_company.personal_profile_id
+),
+filters AS (
+SELECT personal_profiles.profile_id,
+personal_profiles.followers,
+companyFollowers,
+CASE WHEN personal_profiles.followers>companyFollowers THEN 1 END AS flag
+FROM companyData INNER JOIN personal_profiles 
+ON companyData.personal_profile_id=personal_profiles.profile_id
+)
+SELECT profile_id
+FROM filters WHERE flag=1
