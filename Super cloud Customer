@@ -1,0 +1,24 @@
+LEVEL:-MEDIUM
+COMPANY:-Microsoft
+URL:-https://datalemur.com/questions/supercloud-customer
+
+Question:-
+A Microsoft Azure Supercloud customer is defined as a customer who has purchased at least one product from every product category listed in the products table.
+
+Write a query that identifies the customer IDs of these Supercloud customers.
+
+Solution:-
+WITH allCategories AS (
+SELECT COUNT(DISTINCT product_category) AS categories FROM products 
+),
+customerData AS (
+SELECT customer_id,
+COUNT(DISTINCT product_category) AS totalCategories
+FROM customer_contracts INNER JOIN products 
+ON customer_contracts.product_id=products.product_id
+GROUP BY customer_id
+ORDER BY customer_id
+)
+SELECT customer_id 
+FROM customerData
+WHERE totalCategories = (SELECT COUNT(DISTINCT product_category) AS categories FROM products)
