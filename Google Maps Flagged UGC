@@ -1,0 +1,33 @@
+LEVEL:-MEDIUM
+COMPANY:-Google
+URL:-https://datalemur.com/questions/off-topic-maps-ugc
+
+Question:-
+As a Data Analyst on the Google Maps User Generated Content team, you and your Product Manager are investigating user-generated content (UGC) – 
+photos and reviews that independent users upload to Google Maps.
+
+Write a query to determine which type of place (place_category) attracts the most UGC tagged as "off-topic". In the case of a tie, 
+show the output in ascending order of place_category.
+
+Assumptions:
+
+    Some places may not have any tags.
+    Each UGC upload with the "off-topic" tag will be counted separately.
+
+
+Solution:-
+WITH combineData AS (
+SELECT place_info.place_category,
+COUNT(content_id) AS totalTags
+FROM maps_ugc_review INNER JOIN place_info 
+ON maps_ugc_review.place_id=place_info.place_id
+WHERE LOWER(content_tag)='off-topic'
+GROUP BY place_info.place_category
+),
+ranking AS (
+SELECT *,
+RANK() OVER(ORDER BY totalTags DESC) AS ranked
+FROM combineData
+)
+SELECT place_category
+FROM ranking WHERE ranked='1'
