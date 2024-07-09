@@ -1,0 +1,27 @@
+LEVEL:-MEDIUM
+COMPANY:-Uber
+URL:-https://datalemur.com/questions/2nd-ride-delay
+
+Question:-
+As a data analyst at Uber, it's your job to report the latest metrics for specific groups of Uber users. Some riders create their Uber account the same 
+day they book their first ride; the rider engagement team calls them "in-the-moment" users.
+
+Uber wants to know the average delay between the day of user sign-up and the day of their 2nd ride. Write a query to pull the average 2nd ride 
+delay for "in-the-moment" Uber users. Round the answer to 2-decimal places.
+
+Solution:-
+WITH cte AS(
+SELECT user_id,
+ride_date,
+ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY ride_date) AS ranked,
+LAG(ride_date,1,ride_date) OVER(PARTITION BY user_id ORDER BY ride_date)
+AS previousDate
+FROM rides
+WHERE rides.user_id IN (SELECT DISTINCT(users.user_id) AS uid
+FROM users INNER JOIN rides
+ON users.registration_date=rides.ride_date AND users.user_id=rides.user_id)
+)
+SELECT
+ROUND(AVG(EXTRACT(day FROM AGE(ride_date, previousDate))),2)AS day_difference
+FROM cte 
+WHERE ranked=2 
