@@ -1,0 +1,29 @@
+LEVEL:-MEDIUM
+COMPANY:-Google
+URL:-https://datalemur.com/questions/consulting-bench-time
+
+Question:-
+In consulting, being "on the bench" means you have a gap between two client engagements. Google wants to know how many days of bench time 
+each consultant had in 2021. Assume that each consultant is only staffed to one consulting engagement at a time.
+
+Write a query to pull each employee ID and their total bench time in days during 2021.
+
+Assumptions:
+
+    All listed employees are current employees who were hired before 2021.
+    The engagements in the consulting_engagements table are complete for the year 2022.
+
+Solution:-
+
+WITH calculation AS (
+SELECT employee_id,
+DATE_PART('day', end_date ::timestamp - start_date::timestamp)+1 AS days_difference
+FROM staffing INNER JOIN consulting_engagements
+ON staffing.job_id=consulting_engagements.job_id
+WHERE is_consultant='true'
+)
+
+SELECT employee_id,
+365-SUM(days_difference)
+FROM calculation
+GROUP BY employee_id
