@@ -1,0 +1,25 @@
+LEVEL:-MEDIUM
+COMPANY:-Bloomberg
+URL:-https://datalemur.com/questions/sql-bloomberg-stock-monthly-change
+
+Question:-
+The Bloomberg terminal is the go-to resource for financial professionals, offering convenient access to a wide array of financial datasets. 
+As a Data Analyst at Bloomberg, you have access to historical data on stock performance for the FAANG stocks.
+
+Your task is to analyze the inter-month change in percentage for each FAANG stock by month over the years. This involves calculating the percentage 
+change in closing price from one month to the next using the following formula:
+
+Inter-month change in percentage = (Current month's closing price - Previous month's closing price) / Previous month's closing price x 100
+
+For each FAANG stock, display the ticker symbol, the last day of the month, closing price, and the inter-month value change in 
+percentage rounded to two decimal places for each stock. Ensure that the results are sorted by ticker symbol and date in chronological order.
+
+Solution:-
+SELECT 
+ticker,
+date,
+close,
+ROUND(((close-LAG(close,1) OVER(PARTITION BY ticker ORDER BY date))/
+LAG(close,1) OVER(PARTITION BY ticker ORDER BY date)) *100,2) AS intermth_change_pct
+FROM stock_prices 
+ORDER BY ticker, date
