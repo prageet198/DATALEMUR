@@ -1,0 +1,22 @@
+LEVEL:-MEDIUM
+COMPANY:-Uber
+URL:-https://datalemur.com/questions/sql-third-transaction
+
+Question:-
+Assume you are given the table below on Uber transactions made by users. Write a query to obtain the third transaction of every user. 
+Output the user id, spend and transaction date.
+
+Solution:-
+WITH overallData AS (
+SELECT user_id,
+spend,
+transaction_date,
+ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY transaction_date) AS ranked
+FROM transactions
+)
+
+SELECT user_id,
+spend,
+transaction_date
+FROM overallData
+WHERE ranked='3'
