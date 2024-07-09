@@ -1,0 +1,83 @@
+LEVEL:-MEDIUM
+COMPANY:-Bloomberg
+URL:-https://datalemur.com/questions/sql-bloomberg-stock-min-max-1
+
+Question:-
+The Bloomberg terminal is the go-to resource for financial professionals, offering convenient access to a wide array of financial datasets. 
+As a Data Analyst at Bloomberg, you have access to historical data on stock performance.
+
+Currently, you're analyzing the highest and lowest open prices for each FAANG stock by month over the years.
+
+For each FAANG stock, display the ticker symbol, the month and year ('Mon-YYYY') with the corresponding highest and lowest open prices (
+refer to the Example Output format). Ensure that the results are sorted by ticker symbol.
+
+Solution-1:-
+WITH maxOpend AS (
+SELECT ticker,
+MAX(open) AS maxOpen
+FROM stock_prices
+GROUP BY ticker
+),
+maxData AS (
+SELECT stock_prices.ticker,
+maxOpen,
+TO_CHAR(date::timestamp, 'Mon-YYYY') AS formatted_date_high
+FROM stock_prices INNER JOIN maxOpend
+ON stock_prices.ticker=maxOpend.ticker AND
+stock_prices.open=maxOpend.maxOpen
+),
+minOpend AS (
+SELECT ticker,
+MIN(open) AS minOpen
+FROM stock_prices
+GROUP BY ticker
+),
+minData AS (
+SELECT stock_prices.ticker,
+minOpen,
+TO_CHAR(date::timestamp, 'Mon-YYYY') AS formatted_date_low
+FROM stock_prices INNER JOIN minOpend
+ON stock_prices.ticker=minOpend.ticker AND
+stock_prices.open=minOpend.minOpen
+)
+SELECT maxData.ticker,
+formatted_date_high AS highest_mth,
+maxOpen AS highest_open,
+formatted_date_low AS lowest_mth,
+minOpen AS lowest_open
+FROM maxData INNER JOIN minData
+ON maxData.ticker=minData.ticker
+ORDER BY maxData.ticker
+
+Solution-2:-
+WITH highest_prices AS (
+  SELECT 
+    ticker,
+    TO_CHAR(date, 'Mon-YYYY') AS highest_mth,
+    MAX(open) AS highest_open,
+    ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY open DESC) AS row_num
+  FROM stock_prices
+  GROUP BY ticker, TO_CHAR(date, 'Mon-YYYY'), open
+),
+lowest_prices AS (
+  SELECT 
+    ticker,
+    TO_CHAR(date, 'Mon-YYYY') AS lowest_mth,
+    MIN(open) AS lowest_open,
+    ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY open) AS row_num
+  FROM stock_prices
+  GROUP BY ticker, TO_CHAR(date, 'Mon-YYYY'), open
+)
+
+SELECT
+  highest.ticker,
+  highest.highest_mth,
+  highest.highest_open,
+  lowest.lowest_mth,
+  lowest.lowest_open
+FROM highest_prices as highest
+INNER JOIN lowest_prices AS lowest
+  ON highest.ticker = lowest.ticker
+  AND highest.row_num = 1 -- Highest open price
+  AND lowest.row_num = 1 -- Lowest open price
+ORDER BY highest.ticker;
