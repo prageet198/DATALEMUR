@@ -1,0 +1,21 @@
+LEVEL:-MEDIUM
+COMPANY:-Facebook
+URL:-https://datalemur.com/questions/email-table-transformation
+
+Question:-
+Each Facebook user can designate a personal email address, a business email address, and a recovery email address.
+
+Unfortunately, the table is currently in the wrong format, so you need to transform its structure to show the following columns 
+(see example output): user id, personal email, business email, and recovery email. Sort your answer by user id in ascending order.
+
+Solution:-
+SELECT 
+    user_id,
+    MAX(CASE WHEN email_type = 'personal' THEN email END) AS personal_email,
+    MAX(CASE WHEN email_type = 'business' THEN email END) AS business_email,
+    MAX(CASE WHEN email_type = 'recovery' THEN email END) AS recovery_email
+FROM 
+    users 
+GROUP BY 
+    user_id
+ORDER BY user_id
