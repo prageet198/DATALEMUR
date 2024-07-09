@@ -1,0 +1,28 @@
+LEVEL:-MEDIUM
+COMPANY:-Walmart
+URL:-https://datalemur.com/questions/histogram-users-purchases
+
+Question:-
+Assume you're given a table on Walmart user transactions. Based on their most recent transaction date, write a query that retrieve the users along 
+with the number of products they bought.
+
+Output the user's most recent transaction date, user ID, and the number of products, sorted in chronological order by the transaction date.
+
+Solution:-
+WITH userMaxDate AS (
+SELECT user_id,
+MAX(DATE(transaction_date)) AS maxTransDate
+FROM user_transactions
+GROUP BY user_id
+)
+
+SELECT 
+user_transactions.user_id,
+user_transactions.transaction_date,
+COUNT(*) AS purchase_count
+FROM user_transactions INNER JOIN userMaxDate
+ON user_transactions.user_id=userMaxDate.user_id AND
+DATE(user_transactions.transaction_date)=maxTransDate
+GROUP BY user_transactions.user_id,
+user_transactions.transaction_date
+ORDER BY user_transactions.transaction_date
