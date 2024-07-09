@@ -1,0 +1,55 @@
+LEVEL:-MEDIUM
+COMPANY:-Tiktok
+URL:-https://datalemur.com/questions/signup-confirmation-rate
+
+Question:-
+New TikTok users sign up with their emails. They confirmed their signup by replying to the text confirmation to activate their accounts. 
+Users may receive multiple text messages for account confirmation until they have confirmed their new account.
+
+A senior analyst is interested to know the activation rate of specified users in the emails table. Write a query to find the activation rate. 
+Round the percentage to 2 decimal places.
+
+Definitions:
+
+    emails table contain the information of user signup details.
+    texts table contains the users' activation information.
+
+Assumptions:
+
+    The analyst is interested in the activation rate of specific users in the emails table, which may not include all users that could potentially 
+	be found in the texts table.
+    For example, user 123 in the emails table may not be in the texts table and vice versa.
+
+Solution-1:-
+WITH latestStatus AS (
+SELECT 
+texts.email_id,
+MAX(texts.text_id) AS latestId
+FROM  texts 
+GROUP BY texts.email_id
+),
+filterData AS (
+SELECT texts.email_id,
+texts.signup_action
+FROM latestStatus INNER JOIN texts 
+ON latestStatus.email_id=texts.email_id AND 
+latestStatus.latestId=texts.text_id
+),
+totalData AS (
+SELECT 
+COUNT(CASE WHEN signup_action='Confirmed' THEN 1 END) AS totalConfirmed,
+COUNT(CASE WHEN signup_action IS NULL OR signup_action='Not Confirmed' THEN 1 END) AS totalNotConfirmed
+FROM emails LEFT JOIN filterData
+ON emails.email_id=filterData.email_id
+)
+SELECT ROUND(totalConfirmed::NUMERIC/(totalConfirmed+totalNotConfirmed),2) AS confirm_rate
+FROM totalData
+
+Solution-2:-
+SELECT 
+  ROUND(COUNT(texts.email_id)::DECIMAL
+    /COUNT(DISTINCT emails.email_id),2) AS activation_rate
+FROM emails
+LEFT JOIN texts
+  ON emails.email_id = texts.email_id
+  AND texts.signup_action = 'Confirmed'; 
