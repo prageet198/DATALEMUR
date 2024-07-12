@@ -1,0 +1,44 @@
+LEVEL:-HARD
+COMPANY:-Snowflake
+URL:-https://datalemur.com/questions/marketing-touch-streak
+
+Question:-
+As a Data Analyst on Snowflake's Marketing Analytics team, your objective is to analyze customer relationship management (CRM) data 
+and identify contacts that satisfy two conditions:
+
+    Contacts who had a marketing touch for three or more consecutive weeks.
+    Contacts who had at least one marketing touch of the type 'trial_request'.
+
+Marketing touches, also known as touch points, represent the interactions or points of contact between a brand and its customers.
+
+Your goal is to generate a list of email addresses for these contacts.
+
+Solution:-
+WITH overallData AS (
+SELECT contact_id,
+event_date,
+EXTRACT(week FROM event_date) AS weekNumber
+FROM marketing_touches
+ORDER BY contact_id, event_date
+),
+filterCondition AS (
+SELECT 
+contact_id,
+weekNumber,
+LEAD(weekNumber, 1) OVER (PARTITION BY contact_id ORDER BY event_date) AS next_week,
+LEAD(weekNumber, 2) OVER (PARTITION BY contact_id ORDER BY event_date) AS week_after_next
+FROM overallData
+),
+firstConditionFilter AS (
+SELECT DISTINCT(contact_id)
+FROM filterCondition
+WHERE next_week=weekNumber+1 AND week_after_next=weekNumber+2
+),
+secondConditionFilter AS (
+SELECT DISTINCT(contact_id) AS contactId FROM marketing_touches 
+WHERE contact_id IN (SELECT * FROM firstConditionFilter)
+AND event_type='trial_request'
+)
+
+SELECT email FROM crm_contacts 
+WHERE contact_id IN (SELECT * FROM secondConditionFilter)
