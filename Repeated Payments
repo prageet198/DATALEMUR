@@ -1,0 +1,71 @@
+LEVEL:-HARD
+COMPANY:-Stripe
+URL:-https://datalemur.com/questions/repeated-payments
+
+Question:-
+Sometimes, payment transactions are repeated by accident; it could be due to user error, API failure or a retry error that causes a credit card to be charged twice.
+
+Using the transactions table, identify any payments made at the same merchant with the 
+same credit card for the same amount within 10 minutes of each other. Count such repeated payments.
+
+Assumptions:
+
+    The first transaction of such payments should not be counted as a repeated payment. This means, 
+	if there are two transactions performed by a merchant with the same credit card and for the same amount within 10 minutes, there will only be 1 repeated payment.
+	
+Solution-1:-
+WITH initialData AS (
+SELECT 
+merchant_id,
+credit_card_id,
+amount,
+transaction_timestamp,
+LAG(transaction_timestamp,1) OVER(PARTITION BY merchant_id
+ORDER BY transaction_timestamp) AS previousTransTime,
+LAG(credit_card_id,1) OVER(PARTITION BY merchant_id
+ORDER BY transaction_timestamp) AS previousCard,
+LAG(amount,1) OVER(PARTITION BY merchant_id
+ORDER BY transaction_timestamp) AS previousAmt
+FROM transactions
+),
+filterData AS (
+SELECT 
+merchant_id,
+EXTRACT(EPOCH FROM (transaction_timestamp - previousTransTime)) / 60 AS timeDiff,
+credit_card_id,
+previousCard,
+amount,
+previousAmt
+FROM initialData
+)
+SELECT COUNT (merchant_id) AS payment_count
+FROM filterData
+WHERE amount=previousAmt AND credit_card_id=previousCard
+AND timeDiff<=10
+
+Solution-2:-
+WITH initialData AS (
+SELECT 
+  transaction_id,
+  merchant_id, 
+  credit_card_id, 
+  amount, 
+  transaction_timestamp,
+  LAG(transaction_timestamp) OVER (
+    PARTITION BY merchant_id, credit_card_id, amount 
+    ORDER BY transaction_timestamp
+  ) AS previous_transaction 
+FROM transactions
+),
+filterData AS (
+SELECT transaction_id,
+merchant_id,
+credit_card_id,
+amount,
+EXTRACT(EPOCH FROM (transaction_timestamp - previous_transaction)) / 60 AS timeDiff
+FROM initialData
+)
+
+SELECT COUNT(merchant_id) AS payment_count
+FROM filterData
+WHERE timeDiff<=10
