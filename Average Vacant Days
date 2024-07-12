@@ -1,0 +1,32 @@
+LEVEL:-HARD
+COMPANY:-Airbnb
+URL:-https://datalemur.com/questions/average-vacant-days
+
+Question:-
+The strategy team in Airbnb is trying to analyze the impact of Covid-19 during 2021. To do so, they need you to write a query that outputs 
+the average vacant days across the AirBnbs in 2021. Some properties have gone out of business, so you should only analyze rentals that are currently active. 
+Round the results to a whole number.
+
+Assumptions:
+
+    is_active field equals to 1 when the property is active, and 0 otherwise.
+    In cases where the check-in or check-out date is in another year other than 2021, limit the calculation to the beginning or end of the year 2021 respectively.
+    Listing can be active even if there are no bookings throughout the year.
+
+Solution:-
+WITH listing_vacancies AS (
+SELECT 
+  listings.listing_id,
+  365 - COALESCE(
+    SUM(
+      CASE WHEN checkout_date>'12/31/2021' THEN '12/31/2021' ELSE checkout_date END -
+      CASE WHEN checkin_date<'01/01/2021' THEN '01/01/2021' ELSE checkin_date END 
+  ),0) AS vacant_days
+FROM listings 
+LEFT JOIN bookings
+  ON listings.listing_id = bookings.listing_id 
+WHERE listings.is_active = 1
+GROUP BY listings.listing_id)
+
+SELECT ROUND(AVG(vacant_days)) AS avgVacantDays
+FROM listing_vacancies;
