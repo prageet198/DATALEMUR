@@ -1,0 +1,33 @@
+LEVEL:-HARD
+COMPANY:-Intuit
+URL:-https://datalemur.com/questions/consecutive-filing-years
+
+Question:-
+Intuit, a company known for its tax filing products like TurboTax and QuickBooks, offers multiple versions of these products.
+
+Write a query that identifies the user IDs of individuals who have filed their taxes using any version of TurboTax for three or more consecutive years. 
+Each user is allowed to file taxes once a year using a specific product. Display the output in the ascending order of user IDs.
+
+
+Solution:-
+WITH overallData AS (
+SELECT
+filing_id,
+user_id,
+EXTRACT(YEAR FROM filing_date) AS filledYear
+FROM filed_taxes
+WHERE LOWER(product) LIKE 'turbotax%'
+),
+yearSequence AS (
+SELECT
+user_id,
+filledYear,
+LEAD(filledyear, 1) OVER (PARTITION BY user_id ORDER BY filledyear) AS next_year,
+LEAD(filledyear, 2) OVER (PARTITION BY user_id ORDER BY filledyear) AS year_after_next
+FROM overallData
+)
+
+SELECT
+DISTINCT(user_id)
+FROM yearSequence
+WHERE next_year=filledYear+1 AND year_after_next=filledYear+2
