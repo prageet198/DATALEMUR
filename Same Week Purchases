@@ -1,0 +1,25 @@
+LEVEL:-HARD
+COMPANY:-Etsy 
+URL:-https://datalemur.com/questions/same-week-purchases
+
+Question:-
+You are given the two tables containing information on Etsy’s user signups and purchases. Write a query to obtain the percentage of users 
+who signed up and made a purchase within 7 days of signing up. The result should be rounded to the nearest 2 decimal places.
+
+Assumptions:
+
+    Signups who didn't buy any products yet should also count as part of the percentage of users who signed up and made a purchase within 7 days of signing up
+    If the signup date is on 06/21/2022 and the purchase date on 06/26/2022, then the user makes up part of the percentage of users who signed up a
+	nd purchased within the 7 days of signing up.
+	
+Solution:
+SELECT ROUND(
+  100.0 * 
+    COUNT(DISTINCT purchases.user_id) / 
+    COUNT(DISTINCT signups.user_id), 2) AS same_week_purchases_pct
+FROM signups
+LEFT JOIN user_purchases AS purchases
+  ON signups.user_id = purchases.user_id
+WHERE purchases.purchase_date IS NULL
+  OR (purchases.purchase_date BETWEEN signups.signup_date 
+  AND (signups.signup_date + '7 days'::INTERVAL));
