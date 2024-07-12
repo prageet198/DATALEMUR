@@ -1,0 +1,42 @@
+LEVEL:-HARD
+COMPANY:-UnitedHealth
+URL:-
+
+Question:-
+UnitedHealth Group (UHG) has a program called Advocate4Me, which allows policy holders (or, members) to call an advocate and receive 
+support for their health care needs – whether that's claims and benefits support, drug coverage, pre- and post-authorisation, medical records, 
+emergency assistance, or member portal services.
+
+Write a query to obtain the number of unique callers who made calls within a 7-day interval of their previous calls. If a caller made more 
+than two calls within the 7-day period, count them only once.
+
+Solution-1:-
+WITH call_history AS (
+  SELECT
+    policy_holder_id,
+    call_date AS current_call, -- Remove this column
+    LAG(call_date) OVER (
+  	  PARTITION BY policy_holder_id ORDER BY call_date) AS previous_call, -- Remove this column
+    ROUND(EXTRACT(EPOCH FROM call_date 
+      - LAG(call_date) OVER (
+  	    PARTITION BY policy_holder_id ORDER BY call_date)
+    )/(24*60*60),2) AS time_diff_days
+  FROM callers
+)
+
+SELECT COUNT(DISTINCT policy_holder_id) AS policy holder_count
+FROM call_history
+WHERE time_diff_days <= 7;
+
+Solution-2:-
+WITH combineData AS (
+SELECT policy_holder_id,
+call_date,
+DATE(call_date)-LAG(DATE(call_date),1) 
+OVER(PARTITION BY policy_holder_id ORDER BY DATE(call_date)) AS daysDiff
+FROM callers
+ORDER BY policy_holder_id, call_date
+)
+SELECT COUNT (DISTINCT policy_holder_id) AS policy_holder_count
+FROM combineData
+WHERE daysDiff BETWEEN 1 AND 7
