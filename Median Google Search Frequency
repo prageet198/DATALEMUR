@@ -1,0 +1,29 @@
+LEVEL:-HARD
+COMPANY:-Google
+URL:-https://datalemur.com/questions/median-search-freq
+
+Question:-
+Google's marketing team is making a Superbowl commercial and needs a simple statistic to put on their TV ad: the median number of searches a person made last year.
+
+However, at Google scale, querying the 2 trillion searches is too costly. Luckily, you have access to the summary table which tells you 
+the number of searches made last year and how many Google users fall into that bucket.
+
+Write a query to report the median of searches made by a user. Round the median to one decimal point.
+
+Solution
+WITH RECURSIVE NumberSequence AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1
+    FROM NumberSequence
+    WHERE n < (SELECT MAX(num_users) FROM search_frequency)
+),
+combineData AS (
+SELECT s.searches
+FROM search_frequency s
+JOIN NumberSequence ns ON ns.n <= s.num_users
+ORDER BY s.searches, ns.n
+)
+SELECT ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (
+ORDER BY searches)::DECIMAL,1) AS median
+FROM combineData
