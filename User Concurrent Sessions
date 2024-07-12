@@ -1,0 +1,27 @@
+LEVEL:-HARD
+COMPANY:-Pinterest 
+URL:-https://datalemur.com/questions/concurrent-user-sessions
+
+Question:-
+Assume you're given a table containing information about user sessions, including the start and end times of each session. 
+Write a query to retrieve the user session(s) that occur concurrently with the other user sessions.
+
+Output the session ID and the number of concurrent user sessions, sorted in descending order.
+
+Assumptions:
+
+    Concurrent sessions are defined as sessions that overlap with each other. For instance, if session 1 starts before session 2, 
+	session 2's start time should fall either before or after session 1's end time.
+    Sessions with identical start and end times should not be considered concurrent sessions.
+
+Solution:-
+SELECT 
+  sessions_1.session_id, 
+  COUNT(sessions_2.session_id) AS concurrent_sessions 
+FROM sessions AS sessions_1 
+INNER JOIN sessions AS sessions_2 
+  ON sessions_1.session_id != sessions_2.session_id
+    AND (sessions_2.start_time BETWEEN sessions_1.start_time AND sessions_1.end_time
+    OR sessions_1.start_time BETWEEN sessions_2.start_time AND sessions_2.end_time)
+GROUP BY sessions_1.session_id
+ORDER BY concurrent_sessions DESC;
