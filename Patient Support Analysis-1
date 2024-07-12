@@ -1,0 +1,58 @@
+LEVEL:-HARD
+COMPANY:-UnitedHealth
+URL:-https://datalemur.com/questions/long-calls-growth
+
+Question:-
+UnitedHealth Group (UHG) has a program called Advocate4Me, which allows policy holders (or, members) to call an advocate and receive support for 
+their health care needs – whether that's claims and benefits support, drug coverage, pre- and post-authorisation, medical records, emergency assistance, 
+or member portal services.
+
+To analyze the performance of the program, write a query to determine the month-over-month growth rate specifically for long-calls. A long-call 
+is defined as any call lasting more than 5 minutes (300 seconds).
+
+Output the year and month in numerical format and chronological order, along with the growth percentage rounded to 1 decimal place.
+
+Solution-1:-
+WITH combineData AS (
+SELECT policy_holder_id,
+EXTRACT(YEAR FROM DATE(call_date)) AS extractedYear,
+EXTRACT(MONTH FROM DATE(call_date)) AS extractedMonth
+FROM callers
+WHERE call_duration_secs>300
+),
+overallData AS (
+SELECT extractedYear,
+extractedMonth,
+COUNT(*) AS totalCalls
+FROM combineData
+GROUP BY extractedYear,extractedMonth
+)
+SELECT extractedYear,
+extractedMonth,
+CASE WHEN totalCalls=0 THEN 0.0 ELSE
+ROUND(((totalCalls*1.0-LAG(totalCalls,1) OVER(ORDER BY extractedYear,extractedMonth))/LAG(totalCalls,1) OVER(ORDER BY extractedYear,extractedMonth))*100,1) END
+AS long_calls_growth_pct
+FROM overallData
+
+Solution-2:-
+WITH long_calls AS (
+  SELECT 
+    EXTRACT(YEAR FROM call_date) AS yr,
+    EXTRACT(MONTH FROM call_date) AS mth,
+    COUNT(case_id) AS curr_mth_calls,
+    LAG(COUNT(case_id)) OVER (
+      ORDER BY EXTRACT(MONTH FROM call_date)) AS prev_mth_calls
+FROM callers
+WHERE call_duration_secs > 300
+GROUP BY 
+  EXTRACT(YEAR FROM call_date),
+  EXTRACT(MONTH FROM call_date)
+)
+
+SELECT
+  yr,
+  mth,
+  ROUND(100.0 * 
+    (curr_mth_calls - prev_mth_calls)/prev_mth_calls,1) AS long_calls_growth_pct
+FROM long_calls
+ORDER BY yr, mth;
