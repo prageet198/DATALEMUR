@@ -1,0 +1,29 @@
+LEVEL:-HARD
+COMPANY:-Google
+URL:-https://datalemur.com/questions/senior-managers-reportees
+
+Question:-
+Assume we have a table of Google employees with their corresponding managers.
+
+A manager is an employee with a direct report. A senior manager is an employee who manages at least one manager, but none of their direct reports 
+is senior managers themselves. Write a query to find the senior managers and their direct reports.
+
+Output the senior manager's name and the count of their direct reports. The senior manager with the most direct reports should be the first result.
+Solution:-
+-- Here firsly we will find those employees who are managers
+--After that will find manager manager details
+WITH employeeAsManager AS (
+SELECT emp.emp_id AS empId,
+emp.manager_id AS empManagerId,
+emp.manager_name AS empManagerName,
+manager.emp_id AS managerEmpId,
+manager.manager_id AS managerMangerId,
+manager.manager_name AS managerManagerName
+FROM employees AS emp INNER JOIN employees AS manager
+ON emp.manager_id=manager.emp_id
+)
+SELECT employeeAsManager.managerManagerName,
+COUNT(DISTINCT managerEmpId) AS directReportees
+FROM employeeAsManager INNER JOIN employees AS seniorManager
+ON employeeAsManager.managerMangerId=seniorManager.emp_id
+GROUP BY employeeAsManager.managerManagerName
