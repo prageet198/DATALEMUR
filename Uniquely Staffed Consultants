@@ -1,0 +1,74 @@
+LEVEL:-HARD
+COMPANY:-Accenture 
+URL:-https://datalemur.com/questions/uniquely-staffed-consultants
+
+Question:-
+As a Data Analyst on the People Operations team at Accenture, you are tasked with understanding how many consultants are staffed to each client, 
+and specifically how many consultants are exclusively staffed to a single client.
+
+Write a query that displays the client name along with the total number of consultants attached to each client, 
+and the number of consultants who are exclusively staffed to each client (consultants working exclusively for that client). 
+Ensure the results are ordered alphabetically by client name.
+
+Solution-1:-
+WITH totalEngagment AS (
+SELECT
+employees.employee_id,
+COUNT (DISTINCT consulting_engagements.client_name) AS totalEng
+FROM employees INNER JOIN consulting_engagements 
+ON employees.engagement_id=consulting_engagements.engagement_id
+GROUP BY employees.employee_id
+),
+employeeData AS (
+SELECT employees.employee_id,
+totalEngagment.totalEng,
+consulting_engagements.client_name
+FROM totalEngagment INNER JOIN employees
+ON totalEngagment.employee_id=employees.employee_id
+INNER JOIN consulting_engagements 
+ON consulting_engagements.engagement_id=employees.engagement_id
+),
+single AS (
+SELECT client_name, COUNT(DISTINCT employee_id) AS single_client_consultants
+FROM employeeData
+WHERE totalEng='1'
+GROUP BY client_name
+ORDER BY client_name
+),
+totalData AS (
+SELECT
+consulting_engagements.client_name,
+COUNT(DISTINCT employees.employee_id) AS total_consultants
+FROM employees INNER JOIN consulting_engagements 
+ON employees.engagement_id=consulting_engagements.engagement_id
+GROUP BY consulting_engagements.client_name
+)
+
+SELECT totalData.client_name,
+totalData.total_consultants,
+CASE WHEN single_client_consultants IS NULL THEN 0
+ELSE single_client_consultants END AS singleConsultants
+FROM totalData LEFT JOIN single
+ON totalData.client_name=single.client_name
+
+Solution-2:-
+WITH single_client_consultants AS (
+  SELECT employees.employee_id
+  FROM employees
+  INNER JOIN consulting_engagements AS engagements
+    ON employees.engagement_id = engagements.engagement_id
+  GROUP BY employees.employee_id
+  HAVING COUNT(DISTINCT engagements.client_name) = 1
+)
+
+SELECT 
+  engagements.client_name, 
+  COUNT(DISTINCT employees.employee_id) AS total_consultants,
+  COUNT(DISTINCT single.employee_id) AS single_client_consultants
+FROM employees
+INNER JOIN consulting_engagements AS engagements 
+  ON employees.engagement_id = engagements.engagement_id
+LEFT JOIN single_client_consultants AS single
+  ON employees.employee_id = single.employee_id
+GROUP BY engagements.client_name
+ORDER BY engagements.client_name;
