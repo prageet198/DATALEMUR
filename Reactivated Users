@@ -1,0 +1,30 @@
+LEVEL:-HARD
+COMPANY:-Facebook
+URL:-https://datalemur.com/questions/reactivated-users
+
+Question:-
+Imagine you're provided with a table containing information about user logins on Facebook in 2022. Write a query that determines the number of 
+reactivated users for a given month. Reactivated users are those who were inactive the previous month but logged in during the current month.
+
+Output the month in numerical format along with the count of reactivated users.
+
+Here's some important assumptions to consider:
+
+    The user_logins table only contains data for the year 2022 and there are no missing dates within that period.
+    For instance, if a user whose first login date is on 3 March 2022, we assume that they had previously logged in during the year 2021. 
+	Although the data for their previous logins is not present in the user_logins table, we consider these users as reactivated users.
+
+Solution:-
+SELECT 
+  EXTRACT(MONTH FROM curr_month.login_date) AS mth, 
+  COUNT(DISTINCT curr_month.user_id) AS reactivated_users
+FROM user_logins AS curr_month 
+WHERE NOT EXISTS (
+  SELECT * 
+  FROM user_logins AS last_month 
+  WHERE curr_month.user_id = last_month.user_id 
+    AND EXTRACT(MONTH FROM last_month.login_date) = 
+      EXTRACT(MONTH FROM curr_month.login_date - '1 month' :: INTERVAL)
+) 
+GROUP BY EXTRACT(MONTH FROM curr_month.login_date)
+ORDER BY mth;
