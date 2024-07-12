@@ -1,0 +1,44 @@
+LEVEL:-HARD
+COMPANY:-Facebook
+URL:-https://datalemur.com/questions/event-friends-rec
+
+Question:-
+Facebook wants to recommend new friends to people who show interest in attending 2 or more of the same private events.
+
+Sort your results in order of user_a_id and user_b_id (refer to the Example Output below).
+
+Notes:
+
+    A user interested in attending would have either 'going' or 'maybe' as their attendance status.
+    Friend recommendations are unidirectional, meaning if user x and user y should be recommended to each other, the result table 
+	should have both user x recommended to user y and user y recommended to user x.
+    The result should not contain duplicates (i.e., user y should not be recommended to user x multiple times).
+
+Solution
+--1.Firstly find the users who are interested in attending private events
+--2. After that self join those to get the users with same events
+
+WITH filterCondition AS (
+SELECT user_id, event_id
+FROM event_rsvp
+WHERE attendance_status IN ('going', 'maybe')
+  AND event_type = 'private'
+),
+similarEventsDetail AS (
+SELECT filter1.user_id AS user1id,
+filter1.event_id AS user1EventId,
+filter2.user_id AS user2id,
+filter2.event_id AS user2EventId
+FROM filterCondition AS filter1 
+INNER JOIN filterCondition AS filter2
+ON filter1.user_id!=filter2.user_id AND
+filter1.event_id=filter2.event_id
+)
+SELECT friendship_status.user_a_id,
+friendship_status.user_b_id
+FROM similarEventsDetail INNER JOIN friendship_status 
+ON similarEventsDetail.user1id=friendship_status.user_a_id
+AND similarEventsDetail.user2id=friendship_status.user_b_id
+WHERE friendship_status.status='not_friends'
+GROUP BY friendship_status.user_a_id, friendship_status.user_b_id
+HAVING COUNT(*)>=2
